@@ -42,13 +42,13 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Public static files except admin.html
-app.use(express.static(__dirname, { index: false }));
-
 // 🔐 Protect Admin page itself
 app.get("/admin.html", auth, (req, res) => {
   res.sendFile(path.join(__dirname, "admin.html"));
 });
+
+// Public static files except admin.html
+app.use(express.static(__dirname, { index: false }));
 
 // Public settings
 app.get("/api/settings", (req, res) => {
