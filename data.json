@@ -1,0 +1,30 @@
+{
+  "settings": {
+    "title": "NGU DROPZONE",
+    "subtitle": "Compete. Dominate. Claim the prize.",
+    "type": "Squad",
+    "slots": 12,
+    "entryFee": 80,
+    "whatsappLink": "",
+    "rules": [
+      "No hackers",
+      "No PC players",
+      "Admins decision is final"
+    ],
+    "prizes": [
+      {
+        "label": "1st Prize",
+        "amount": 500
+      },
+      {
+        "label": "2nd Prize",
+        "amount": 300
+      },
+      {
+        "label": "3rd Prize",
+        "amount": 100
+      }
+    ]
+  },
+  "registrations": []
+}
