@@ -1,11 +1,153 @@
-const express=require("express"),fs=require("fs"),path=require("path");
-const app=express(),PORT=process.env.PORT||3000,DATA=path.join(__dirname,"data.json");
-app.use(express.json());app.use(express.static(__dirname));
-const read=()=>JSON.parse(fs.readFileSync(DATA,"utf8"));const write=d=>fs.writeFileSync(DATA,JSON.stringify(d,null,2));
-function auth(req,res,next){let h=req.headers.authorization||"";if(!h.startsWith("Basic ")){res.set("WWW-Authenticate",'Basic realm="NGU Admin"');return res.status(401).send("Login required")}let [u,p]=Buffer.from(h.slice(6),"base64").toString().split(":");if(u!==(process.env.ADMIN_USER||"admin")||p!==(process.env.ADMIN_PASS||"ngu123"))return res.status(401).send("Invalid login");next()}
-app.get("/api/settings",(q,r)=>r.json(read().settings));
-app.put("/api/settings",auth,(q,r)=>{let d=read();d.settings={...d.settings,...q.body};write(d);r.json(d.settings)});
-app.post("/api/register",(q,r)=>{let d=read();if(d.registrations.length>=+d.settings.slots)return r.status(400).json({error:"All slots are full"});let id="NGU-"+Date.now().toString(36).toUpperCase();d.registrations.push({id,...q.body,createdAt:new Date().toISOString(),status:"pending"});write(d);r.json({ok:true,id})});
-app.get("/api/registrations",auth,(q,r)=>r.json(read().registrations));
-app.get("/api/registrations.csv",auth,(q,r)=>{let a=read().registrations,h=["id","name","type","whatsapp","entryFee","createdAt"],rows=[h.join(",")];a.forEach(x=>rows.push(h.map(k=>`"${String(x[k]??"").replace(/"/g,'""')}"`).join(",")));rows[0]+=',"players"';a.forEach((x,i)=>rows[i+1]+=','+`"${(x.players||[]).map(p=>p.name+" ("+p.uid+")").join(" | ")}"`);r.set("Content-Type","text/csv").send(rows.join("\n"))});
-app.listen(PORT,()=>console.log("NGU ESPORTZ on "+PORT));
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const DATA = path.join(__dirname, "data.json");
+
+app.use(express.json());
+
+const read = () => JSON.parse(fs.readFileSync(DATA, "utf8"));
+const write = (data) =>
+  fs.writeFileSync(DATA, JSON.stringify(data, null, 2));
+
+function auth(req, res, next) {
+  const header = req.headers.authorization || "";
+
+  if (!header.startsWith("Basic ")) {
+    res.set("WWW-Authenticate", 'Basic realm="NGU ESPORTZ Admin"');
+    return res.status(401).send("Admin login required");
+  }
+
+  const decoded = Buffer.from(header.slice(6), "base64").toString();
+  const split = decoded.indexOf(":");
+
+  const username = split >= 0 ? decoded.slice(0, split) : "";
+  const password = split >= 0 ? decoded.slice(split + 1) : "";
+
+  const adminUser = process.env.ADMIN_USER || "admin";
+  const adminPass = process.env.ADMIN_PASS || "ngu123";
+
+  if (username !== adminUser || password !== adminPass) {
+    res.set("WWW-Authenticate", 'Basic realm="NGU ESPORTZ Admin"');
+    return res.status(401).send("Invalid admin credentials");
+  }
+
+  next();
+}
+
+// Public website
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Public static files except admin.html
+app.use(express.static(__dirname, { index: false }));
+
+// 🔐 Protect Admin page itself
+app.get("/admin.html", auth, (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
+});
+
+// Public settings
+app.get("/api/settings", (req, res) => {
+  res.json(read().settings);
+});
+
+// 🔐 Update settings
+app.put("/api/settings", auth, (req, res) => {
+  const data = read();
+
+  data.settings = {
+    ...data.settings,
+    ...req.body
+  };
+
+  write(data);
+  res.json(data.settings);
+});
+
+// Player registration
+app.post("/api/register", (req, res) => {
+  const data = read();
+
+  if (data.registrations.length >= Number(data.settings.slots)) {
+    return res.status(400).json({
+      error: "All slots are full"
+    });
+  }
+
+  const id =
+    "NGU-" + Date.now().toString(36).toUpperCase();
+
+  data.registrations.push({
+    ...req.body,
+    id,
+    createdAt: new Date().toISOString(),
+    status: "pending"
+  });
+
+  write(data);
+
+  res.json({
+    ok: true,
+    id
+  });
+});
+
+// 🔐 Admin registrations
+app.get("/api/registrations", auth, (req, res) => {
+  res.json(read().registrations);
+});
+
+// 🔐 CSV export
+app.get("/api/registrations.csv", auth, (req, res) => {
+  const registrations = read().registrations;
+
+  const headers = [
+    "id",
+    "name",
+    "type",
+    "whatsapp",
+    "entryFee",
+    "createdAt"
+  ];
+
+  const rows = [headers.join(",")];
+
+  registrations.forEach((item) => {
+    const line = headers
+      .map(
+        (key) =>
+          `"${String(item[key] ?? "").replace(/"/g, '""')}"`
+      )
+      .join(",");
+
+    const players = (item.players || [])
+      .map(
+        (p) => `${p.name || ""} (${p.uid || ""})`
+      )
+      .join(" | ");
+
+    rows.push(
+      line + `,"${players.replace(/"/g, '""')}"`
+    );
+  });
+
+  rows[0] += ',"players"';
+
+  res
+    .set("Content-Type", "text/csv")
+    .set(
+      "Content-Disposition",
+      'attachment; filename="ngu-registrations.csv"'
+    )
+    .send(rows.join("\n"));
+});
+
+app.listen(PORT, () => {
+  console.log(
+    "NGU ESPORTZ running on port " + PORT
+  );
+});
