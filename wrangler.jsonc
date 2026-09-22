@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ngue-sportz",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-22",
+  "assets": {
+    "directory": "./public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ngu-esportz-db",
+      "database_id": "3b96d16c-5619-45f9-8ef0-f50192dd2498"
+    }
+  ]
+}
