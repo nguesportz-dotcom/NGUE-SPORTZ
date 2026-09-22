@@ -1,30 +1,476 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NGU ESPORTZ</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NGU ESPORTZ</title>
+
 <style>
-:root{--bg:#070814;--card:#101329;--line:#293056;--cyan:#27e8ff;--violet:#8b5cf6;--text:#f4f7ff;--muted:#9ca7c7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#15255a,transparent 35%),radial-gradient(circle at 90% 10%,#32135d,transparent 32%),var(--bg);color:var(--text);font-family:Inter}.wrap{width:min(1050px,92%);margin:auto}.brand{font:700 25px Oxanium}.brand span{color:var(--cyan)}nav{padding:22px 0;display:flex;justify-content:space-between}.btn{border:0;border-radius:11px;padding:12px 17px;background:linear-gradient(135deg,var(--cyan),var(--violet));font-weight:800;cursor:pointer;color:#06101b;text-decoration:none}.hero{text-align:center;padding:55px 0}.eyebrow{color:var(--cyan);font-weight:700;letter-spacing:2px}.hero h1{font:700 clamp(42px,8vw,75px) Oxanium;margin:12px 0;background:linear-gradient(90deg,#fff,var(--cyan),#b68cff);-webkit-background-clip:text;color:transparent}.muted{color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat,.card{background:#101329dd;border:1px solid var(--line);border-radius:17px;padding:20px}.stat b{font:700 27px Oxanium;display:block}.stat small{color:var(--muted)}.two{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:18px 0}.prizes{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.prize{border:1px solid #343d69;border-radius:12px;padding:14px}.prize b{color:var(--cyan)}.prize strong{display:block;font:700 23px Oxanium;margin-top:4px}form{display:grid;gap:12px}label{font-size:12px;color:var(--muted)}input,select{width:100%;padding:12px;background:#090c1b;border:1px solid #31395f;border-radius:9px;color:#fff;margin-top:5px}.members{display:grid;gap:10px;padding:14px;border:1px solid #292f50;border-radius:12px}.member-title{font:700 18px Oxanium}.msg{display:none;padding:12px;border-radius:9px}.ok{background:#103522;color:#7dffb1}.err{background:#3a1320;color:#ff9bad}@media(max-width:750px){.stats{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}@media(max-width:450px){.stats{grid-template-columns:1fr 1fr}}
-</style></head><body><div class="wrap">
-<nav><div class="brand">NGU <span>ESPORTZ</span></div></nav>
-<section class="hero"><div class="eyebrow">FREE FIRE TOURNAMENT</div><h1 id="title">NGU DROPZONE</h1><p class="muted" id="subtitle"></p><a class="btn" href="#register">REGISTER NOW</a></section>
-<div class="stats"><div class="stat"><b id="type"></b><small>TYPE</small></div><div class="stat"><b id="slots"></b><small>SLOTS</small></div><div class="stat"><b id="fee"></b><small>ENTRY FEE</small></div><div class="stat"><b id="pool"></b><small>PRIZE POOL</small></div></div>
-<div class="two"><section class="card"><h2>🏆 Prize Pool</h2><div id="prizes" class="prizes"></div></section><section class="card"><h2>📜 Rules</h2><div id="rules"></div></section></div>
-<section class="card" id="register"><h2>🎮 Player / Team Registration</h2><form id="form">
-<div><label>Team / Player Name</label><input name="name" required placeholder="Team name / player name"></div>
-<div><label>WhatsApp Number</label><input name="whatsapp" required placeholder="10-digit number"></div>
-<div id="members" class="members"></div>
-<button class="btn">SUBMIT REGISTRATION</button></form><div id="msg" class="msg"></div></section>
-<p class="muted" style="text-align:center;padding:25px">© NGU ESPORTZ</p></div>
-<script>
-let s={};const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');
-const esc=x=>String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-function render(){
- title.textContent=s.title||'NGU DROPZONE';subtitle.textContent=s.subtitle||'';type.textContent=s.type||'Squad';slots.textContent=s.slots||0;fee.textContent=money(s.entryFee);
- pool.textContent=money((s.prizes||[]).reduce((a,p)=>a+Number(p.amount||0),0));
- prizes.innerHTML=(s.prizes||[]).map(p=>`<div class="prize"><b>${esc(p.label)}</b><strong>${money(p.amount)}</strong></div>`).join('');
- rules.innerHTML=(s.rules||[]).map(r=>`<p>✓ ${esc(r)}</p>`).join('');
- const count={Solo:1,Duo:2,Squad:4}[s.type]||4;
- members.innerHTML=Array.from({length:count},(_,i)=>`<div><div class="member-title">Player ${i+1}</div><label>Player ${i+1} Name</label><input name="player${i+1}_name" ${i===0?'required':''} placeholder="Full player name"><label>Player ${i+1} UID</label><input name="player${i+1}_uid" ${i===0?'required':''} placeholder="Free Fire UID"></div>`).join('');
+:root{
+  --bg:#070814;
+  --card:#101329;
+  --line:#293056;
+  --cyan:#27e8ff;
+  --violet:#b85cfc;
+  --text:#f4f7ff;
+  --muted:#9ca7c7;
 }
-async function load(){s=await fetch('/api/settings').then(r=>r.json());render()}
-form.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target), body=Object.fromEntries(fd.entries());body.type=s.type;body.entryFee=Number(s.entryFee);body.players=[];const count={Solo:1,Duo:2,Squad:4}[s.type]||4;for(let i=1;i<=count;i++)body.players.push({name:body[`player${i}_name`]||'',uid:body[`player${i}_uid`]||''});const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json();msg.style.display='block';msg.className='msg '+(r.ok?'ok':'err');msg.textContent=r.ok?`Registration successful! Registration ID: ${d.id}`:d.error;if(r.ok)e.target.reset()});
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 10% 10%,#15255a,transparent 35%),
+    radial-gradient(circle at 90% 20%,#32135d,transparent 32%),
+    var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+.wrap{width:min(1050px,92%);margin:auto}
+nav{
+  padding:22px 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.brand{
+  font-size:25px;
+  font-weight:800;
+}
+.brand span{color:var(--cyan)}
+.hero{
+  text-align:center;
+  padding:55px 0 25px;
+}
+.eyebrow{
+  color:var(--cyan);
+  font-weight:700;
+}
+h1{font-size:42px;margin:10px 0}
+h2{margin-top:0}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin:20px 0;
+}
+.stat,.card{
+  background:linear-gradient(145deg,#11162e,#0d1022);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px;
+}
+.stat b{
+  display:block;
+  font-size:22px;
+  margin-bottom:5px;
+}
+.muted{color:var(--muted)}
+.two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+.prizes>div{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin:8px 0;
+}
+.rules p{margin:8px 0}
+label{
+  display:block;
+  margin:12px 0 6px;
+  color:#dce4ff;
+}
+input,select{
+  width:100%;
+  padding:13px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#080b19;
+  color:white;
+  outline:none;
+}
+input:focus,select:focus{
+  border-color:var(--cyan);
+}
+.members{
+  margin-top:10px;
+}
+.player{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin:10px 0;
+}
+.btn{
+  width:100%;
+  border:0;
+  border-radius:11px;
+  padding:14px 17px;
+  margin-top:15px;
+  background:linear-gradient(135deg,var(--cyan),var(--violet));
+  color:#06101b;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn.secondary{
+  background:#171c38;
+  color:white;
+  border:1px solid var(--line);
+}
+.msg{
+  display:none;
+  margin-top:14px;
+  padding:12px;
+  border-radius:10px;
+}
+.ok{
+  background:#103d2b;
+  color:#8fffc9;
+}
+.err{
+  background:#431b25;
+  color:#ff9cac;
+}
+#payment{
+  display:none;
+  margin-top:18px;
+}
+.qr{
+  display:block;
+  width:min(320px,100%);
+  margin:15px auto;
+  border-radius:14px;
+  border:2px solid var(--line);
+}
+.paybox{
+  text-align:center;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#080b19;
+}
+.amount{
+  font-size:30px;
+  font-weight:900;
+  color:var(--cyan);
+}
+.upi{
+  font-size:17px;
+  margin-top:8px;
+  color:#fff;
+  word-break:break-all;
+}
+@media(max-width:700px){
+  .two,.stats{grid-template-columns:1fr}
+  h1{font-size:32px}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<nav>
+  <div class="brand">NGU <span>ESPORTZ</span></div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">FREE FIRE TOURNAMENT</div>
+  <h1 id="title">NGU DROPZONE</h1>
+  <p id="subtitle" class="muted">Compete. Dominate. Claim the prize.</p>
+</section>
+
+<div class="stats">
+  <div class="stat">
+    <b id="type">Squad</b>
+    <small>TYPE</small>
+  </div>
+  <div class="stat">
+    <b id="slots">12</b>
+    <small>SLOTS</small>
+  </div>
+  <div class="stat">
+    <b id="fee">₹80</b>
+    <small>ENTRY FEE</small>
+  </div>
+</div>
+
+<div class="two">
+
+<section class="card">
+  <h2>🏆 Prize Pool</h2>
+  <div id="prizes" class="prizes"></div>
+</section>
+
+<section class="card">
+  <h2>📜 Rules</h2>
+  <div id="rules" class="rules"></div>
+</section>
+
+</div>
+
+<section class="card" id="register" style="margin-top:18px">
+  <h2>🎮 Player / Team Registration</h2>
+
+  <form id="form">
+
+    <label>Team / Player Name</label>
+    <input name="name" required placeholder="Enter team/player name">
+
+    <label>WhatsApp Number</label>
+    <input
+      name="whatsapp"
+      required
+      inputmode="numeric"
+      placeholder="10-digit number"
+      maxlength="10">
+
+    <div id="members" class="members"></div>
+
+    <button class="btn" type="submit">
+      CONTINUE TO PAYMENT
+    </button>
+
+  </form>
+
+  <div id="payment" class="card">
+
+    <h2>💳 Complete Payment</h2>
+
+    <div class="paybox">
+      <div>Entry Fee</div>
+      <div class="amount" id="payAmount">₹80</div>
+
+      <div style="margin-top:15px">Pay using UPI</div>
+      <div class="upi">venky4697@axl</div>
+    </div>
+
+    <img
+      class="qr"
+      src="/Screenshot_20260922_132132.jpg"
+      alt="NGU ESPORTZ Payment QR">
+
+    <p class="muted" style="text-align:center">
+      Scan the QR and complete the payment.
+    </p>
+
+    <label>Transaction / Reference ID</label>
+    <input
+      id="transactionId"
+      placeholder="Enter UPI transaction ID"
+      autocomplete="off">
+
+    <button class="btn" type="button" id="paySubmit">
+      SUBMIT PAYMENT & REGISTER
+    </button>
+
+  </div>
+
+  <div id="msg" class="msg"></div>
+</section>
+
+</div>
+
+<script>
+let s={};
+
+const money=n =>
+  "₹"+Number(n||0).toLocaleString("en-IN");
+
+const esc=x =>
+  String(x??"").replace(/[&<>"']/g,m=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  }[m]));
+
+function render(){
+
+  title.textContent=s.title||"NGU DROPZONE";
+  subtitle.textContent=s.subtitle||"";
+  type.textContent=s.type||"Squad";
+  slots.textContent=s.slots||0;
+  fee.textContent=money(s.entryFee);
+  payAmount.textContent=money(s.entryFee);
+
+  prizes.innerHTML=(s.prizes||[]).map(p=>
+    `<div>
+      <b>${esc(p.label)}</b>
+      <strong style="float:right">${money(p.amount)}</strong>
+    </div>`
+  ).join("");
+
+  rules.innerHTML=(s.rules||[]).map(r=>
+    `<p>✓ ${esc(r)}</p>`
+  ).join("");
+
+  const count={
+    Solo:1,
+    Duo:2,
+    Squad:4
+  }[s.type]||4;
+
+  members.innerHTML=Array.from(
+    {length:count},
+    (_,i)=>`
+      <div class="player">
+        <label>Player ${i+1} Name</label>
+        <input
+          name="player${i+1}_name"
+          required
+          placeholder="Full player name">
+
+        <label>Player ${i+1} Free Fire UID</label>
+        <input
+          name="player${i+1}_uid"
+          required
+          inputmode="numeric"
+          placeholder="Free Fire UID">
+      </div>
+    `
+  ).join("");
+}
+
+async function load(){
+
+  try{
+    s=await fetch("/api/settings").then(r=>r.json());
+    render();
+  }catch(e){
+    s={
+      title:"NGU DROPZONE",
+      subtitle:"Compete. Dominate. Claim the prize.",
+      type:"Squad",
+      slots:12,
+      entryFee:80,
+      prizes:[],
+      rules:[]
+    };
+    render();
+  }
+}
+
+const form=document.getElementById("form");
+const payment=document.getElementById("payment");
+const transactionId=document.getElementById("transactionId");
+const paySubmit=document.getElementById("paySubmit");
+const msg=document.getElementById("msg");
+
+let registrationData=null;
+
+form.addEventListener("submit",e=>{
+
+  e.preventDefault();
+
+  const fd=new FormData(form);
+
+  registrationData={
+    name:fd.get("name"),
+    whatsapp:fd.get("whatsapp"),
+    type:s.type,
+    entryFee:Number(s.entryFee||0),
+    players:[]
+  };
+
+  const count={
+    Solo:1,
+    Duo:2,
+    Squad:4
+  }[s.type]||4;
+
+  for(let i=1;i<=count;i++){
+
+    registrationData.players.push({
+      name:fd.get("player"+i+"_name")||"",
+      uid:fd.get("player"+i+"_uid")||""
+    });
+
+  }
+
+  payment.style.display="block";
+  msg.style.display="none";
+
+  payment.scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+});
+
+paySubmit.addEventListener("click",async()=>{
+
+  const txn=transactionId.value.trim();
+
+  if(!txn){
+    msg.className="msg err";
+    msg.style.display="block";
+    msg.textContent="Please enter your Transaction / Reference ID.";
+    transactionId.focus();
+    return;
+  }
+
+  if(!registrationData){
+    msg.className="msg err";
+    msg.style.display="block";
+    msg.textContent="Please complete the registration form first.";
+    return;
+  }
+
+  paySubmit.disabled=true;
+  paySubmit.textContent="SUBMITTING...";
+
+  registrationData.paymentTxnId=txn;
+  registrationData.paymentStatus="pending_verification";
+  registrationData.paidAt=new Date().toISOString();
+
+  try{
+
+    const r=await fetch("/api/register",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(registrationData)
+    });
+
+    const d=await r.json();
+
+    if(!r.ok){
+      throw new Error(d.error||"Registration failed");
+    }
+
+    msg.className="msg ok";
+    msg.style.display="block";
+
+    msg.innerHTML=
+      "✅ Registration submitted successfully!<br><br>"+
+      "Registration ID: <b>"+esc(d.id)+"</b><br>"+
+      "Payment status: <b>Pending Verification</b><br><br>"+
+      "Admin will verify your payment.";
+
+    form.reset();
+    transactionId.value="";
+    payment.style.display="none";
+    registrationData=null;
+
+  }catch(err){
+
+    msg.className="msg err";
+    msg.style.display="block";
+    msg.textContent=err.message;
+
+    paySubmit.disabled=false;
+    paySubmit.textContent="SUBMIT PAYMENT & REGISTER";
+  }
+
+});
+
 load();
-</script></body></html>
+</script>
+
+</body>
+</html>
